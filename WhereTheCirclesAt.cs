@@ -87,7 +87,6 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
             return;
         }
 
-
         if (!Settings.IgnoreFullscreenPanels && ingameUi.FullscreenPanels.Any(x => x.IsVisible))
         {
             return;
@@ -144,7 +143,7 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
 
     public void DrawCircleInWorld(Vector3N worldCenter, float radius, Color color, float thickness, int segmentCount)
     {
-        var circlePoints = GetInWorldCirclePoints(worldCenter, radius, segmentCount, true);
+        var circlePoints = GetInWorldCirclePoints(worldCenter, radius, segmentCount, false);
         DrawPolyLine(circlePoints, color, thickness, ImDrawFlags.Closed);
     }
 
