@@ -8,7 +8,8 @@ namespace WhereTheCirclesAt;
 public class WhereTheCirclesAtSettings : ISettings
 {
     public ToggleNode Enable { get; set; } = new ToggleNode(false);
-    public ToggleNode DrawMap { get; set; } = new ToggleNode(true);
+    public ToggleNode DisableDrawRegionLimiting { get; set; } = new ToggleNode(false);
+    public ToggleNode DisableDrawOnLeftOrRightPanelsOpen { get; set; } = new ToggleNode(false);
     public ToggleNode IgnoreFullscreenPanels { get; set; } = new ToggleNode(false);
     public ToggleNode IgnoreLargePanels { get; set; } = new ToggleNode(false);
 

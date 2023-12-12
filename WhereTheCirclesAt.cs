@@ -1,9 +1,13 @@
 ﻿using ExileCore;
+using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared.Helpers;
 using ImGuiNET;
 using SharpDX;
+using System;
 using System.Linq;
 using static WhereTheCirclesAt.WhereTheCirclesAtSettings;
+using Vector2N = System.Numerics.Vector2;
 using Vector3N = System.Numerics.Vector3;
 using Vector4N = System.Numerics.Vector4;
 
@@ -12,6 +16,8 @@ namespace WhereTheCirclesAt;
 public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
 {
     public Vector3N PlayerPos { get; set; } = new Vector3N();
+    private SharpDX.RectangleF _rect;
+    private ImDrawListPtr _backGroundWindowPtr;
     public IngameData IngameData { get; set; }
 
     public override bool Initialise() => true;
@@ -31,7 +37,6 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
             {
                 if (ImGui.CollapsingHeader($@"##{i}", ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.DefaultOpen))
                 {
-                    // Start Indent
                     ImGui.Indent();
 
                     ImGui.InputText($"Name##Name{i}", ref item.Name, 200);
@@ -41,11 +46,8 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
                     item.Color = ColorPicker($"Color##Width{i}", item.Color);
 
                     if (ImGui.Button($"Delete##{i}"))
-                    {
                         Settings.Circles.RemoveAt(i);
-                    }
 
-                    // End Indent
                     ImGui.Unindent();
                     ImGui.Separator();
                 }
@@ -80,6 +82,12 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
         if (!Settings.Enable.Value || !GameController.InGame || IngameData == null || PlayerPos == Vector3N.Zero) return;
 
         var ingameUi = GameController.Game.IngameState.IngameUi;
+        if (Settings.DisableDrawOnLeftOrRightPanelsOpen && (ingameUi.OpenLeftPanel.IsVisible || ingameUi.OpenRightPanel.IsVisible))
+        {
+            return;
+        }
+
+
         if (!Settings.IgnoreFullscreenPanels && ingameUi.FullscreenPanels.Any(x => x.IsVisible))
         {
             return;
@@ -90,14 +98,77 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
             return;
         }
 
+        _rect = GameController.Window.GetWindowRectangle() with { Location = Vector2.Zero };
+        if (!Settings.DisableDrawRegionLimiting)
+        {
+            if (ingameUi.OpenRightPanel.IsVisible)
+            {
+                _rect.Right = ingameUi.OpenRightPanel.GetClientRectCache.Left;
+            }
+
+            if (ingameUi.OpenLeftPanel.IsVisible)
+            {
+                _rect.Left = ingameUi.OpenLeftPanel.GetClientRectCache.Right;
+            }
+        }
+
+        ImGui.SetNextWindowSize(new Vector2N(_rect.Width, _rect.Height));
+        ImGui.SetNextWindowPos(new Vector2N(_rect.Left, _rect.Top));
+
+        ImGui.Begin("wherethecirclesat_drawregion",
+            ImGuiWindowFlags.NoDecoration |
+            ImGuiWindowFlags.NoInputs |
+            ImGuiWindowFlags.NoMove |
+            ImGuiWindowFlags.NoScrollWithMouse |
+            ImGuiWindowFlags.NoSavedSettings |
+            ImGuiWindowFlags.NoFocusOnAppearing |
+            ImGuiWindowFlags.NoBringToFrontOnFocus |
+            ImGuiWindowFlags.NoBackground);
+
+        _backGroundWindowPtr = ImGui.GetWindowDrawList();
+
         foreach (var drawing in Settings.Circles)
         {
             DrawData(drawing.Color, drawing.Size, drawing.Thickness, drawing.Segments);
         }
 
+        ImGui.End();
+
         void DrawData(Color color, float size, int thickness, int segments)
         {
-            Graphics.DrawCircleInWorld(PlayerPos, size, color, thickness, segments);
+            DrawCircleInWorld(PlayerPos, size, color, thickness, segments);
         }
     }
+
+    #region Graphics.cs Code
+
+    public void DrawCircleInWorld(Vector3N worldCenter, float radius, Color color, float thickness, int segmentCount)
+    {
+        var circlePoints = GetInWorldCirclePoints(worldCenter, radius, segmentCount, true);
+        DrawPolyLine(circlePoints, color, thickness, ImDrawFlags.Closed);
+    }
+
+    public void DrawPolyLine(Vector2N[] points, Color color, float thickness, ImDrawFlags drawFlags)
+    {
+        _backGroundWindowPtr.AddPolyline(ref points[0], points.Length, color.ToImgui(), drawFlags, thickness);
+    }
+
+    private static Vector2N[] GetInWorldCirclePoints(Vector3N worldCenter, float radius, int segmentCount, bool addFinalPoint)
+    {
+        var circlePoints = new Vector2N[segmentCount + (addFinalPoint ? 1 : 0)];
+        float segmentAngle = 2f * MathF.PI / segmentCount;
+
+        for (var i = 0; i < segmentCount + (addFinalPoint ? 1 : 0); i++)
+        {
+            var angle = i * segmentAngle;
+            var currentOffset = Vector2N.UnitX.RotateRadians(angle) * radius;
+            var currentWorldPos = worldCenter + new Vector3N(currentOffset, 0);
+
+            circlePoints[i] = RemoteMemoryObject.pTheGame.IngameState.Camera.WorldToScreen(currentWorldPos);
+        }
+
+        return circlePoints;
+    }
+
+    #endregion Graphics.cs Code
 }
