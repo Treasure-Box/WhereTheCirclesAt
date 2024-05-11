@@ -21,6 +21,8 @@ public class WhereTheCirclesAtSettings : ISettings
         public float Size;
         public int Thickness;
         public int Segments;
+        public bool LargeMap;
+        public bool World;
         public Color Color;
 
         public CircleData()
@@ -29,6 +31,8 @@ public class WhereTheCirclesAtSettings : ISettings
             Size = 100;
             Thickness = 7;
             Segments = 40;
+            LargeMap = false;
+            World = true;
             Color = Color.White;
         }
     }

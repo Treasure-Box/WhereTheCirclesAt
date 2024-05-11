@@ -35,16 +35,20 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
         if (Settings.Circles.Count > 0)
         {
             foreach (var (item, i) in Settings.Circles.Select((x, i) => (x, i)).ToList())
-                if (ImGui.CollapsingHeader($@"##{i}", ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.DefaultOpen))
+            {
+                ImGui.PushID($"{i}Settings");
+                if (ImGui.CollapsingHeader("", ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.DefaultOpen))
                 {
                     ImGui.Indent();
-                    ImGui.InputText($"Name##Name{i}", ref item.Name, 200);
-                    ImGui.DragFloat($"Closely Resembles in game distance##Size{i}", ref item.Size);
-                    ImGui.DragInt($"Width##Width{i}", ref item.Thickness);
-                    ImGui.DragInt($"Segments (high = bad)##segments{i}", ref item.Segments);
-                    item.Color = ColorPicker($"Color##Width{i}", item.Color);
+                    ImGui.InputText("Name", ref item.Name, 200);
+                    ImGui.DragFloat("Closely Resembles in game distance", ref item.Size);
+                    ImGui.DragInt("Width", ref item.Thickness);
+                    ImGui.DragInt("Segments (high = bad)", ref item.Segments);
+                    ImGui.Checkbox("Draw in World", ref item.World);
+                    ImGui.Checkbox("Draw on Large Map", ref item.LargeMap);
+                    item.Color = ColorPicker("Color", item.Color);
 
-                    if (ImGui.Button($"Delete##{i}"))
+                    if (ImGui.Button("Delete"))
                     {
                         Settings.Circles.RemoveAt(i);
                     }
@@ -52,6 +56,8 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
                     ImGui.Unindent();
                     ImGui.Separator();
                 }
+                ImGui.PopID();
+            }
         }
 
         if (ImGui.Button("New"))
@@ -147,7 +153,17 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
         _backGroundWindowPtr = ImGui.GetWindowDrawList();
 
         foreach (var drawing in Settings.Circles)
-            DrawData(drawing.Color, drawing.Size, drawing.Thickness, drawing.Segments);
+        {
+            if (drawing.World)
+            {
+                DrawData(drawing.Color, drawing.Size, drawing.Thickness, drawing.Segments);
+            }
+
+            if (drawing.LargeMap && GameController.Game.IngameState.IngameUi.Map.LargeMap.IsVisible)
+            {
+                Graphics.DrawCircleOnLargeMap(GameController.Player.GridPosNum, false, drawing.Size, drawing.Color, drawing.Thickness, drawing.Segments);
+            }
+        }
 
         ImGui.End();
         return;
@@ -176,12 +192,14 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
     {
         var circlePoints = new Vector2N[segmentCount + (addFinalPoint ? 1 : 0)];
         var segmentAngle = 2f * MathF.PI / segmentCount;
+        var startAngle = -MathF.PI / 4;
 
         for (var i = 0; i < segmentCount + (addFinalPoint ? 1 : 0); i++)
         {
-            var angle = i * segmentAngle;
+            var angle = startAngle + i * segmentAngle;
             var currentOffset = Vector2N.UnitX.RotateRadians(angle) * radius;
             var currentWorldPos = worldCenter + new Vector3N(currentOffset, 0);
+
             circlePoints[i] = RemoteMemoryObject.pTheGame.IngameState.Camera.WorldToScreen(currentWorldPos);
         }
 

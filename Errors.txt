@@ -1,0 +1,2 @@
+Build failed:
+[11/05/2024 12:05:05 pm, D:\Tools\Path of Exile Tools\Main Overlay\PoeHelper\Plugins\Source\WhereTheCirclesAt\WhereTheCirclesAt.cs(157, 47)] CS1503: Argument 1: cannot convert from 'System.Numerics.Vector2' to 'System.Numerics.Vector3'
