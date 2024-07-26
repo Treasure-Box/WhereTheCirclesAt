@@ -22,8 +22,10 @@ public class WhereTheCirclesAtSettings : ISettings
         public int Thickness;
         public int Segments;
         public bool LargeMap;
+        public bool EnableLargeMapColor;
+        public Color LargeMapColor;
         public bool World;
-        public Color Color;
+        public Color GameWorldColor;
 
         public CircleData()
         {
@@ -32,8 +34,10 @@ public class WhereTheCirclesAtSettings : ISettings
             Thickness = 7;
             Segments = 40;
             LargeMap = false;
+            EnableLargeMapColor = false;
+            LargeMapColor = Color.White;
             World = true;
-            Color = Color.White;
+            GameWorldColor = Color.White;
         }
     }
 }

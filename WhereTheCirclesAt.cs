@@ -46,7 +46,9 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
                     ImGui.DragInt("Segments (high = bad)", ref item.Segments);
                     ImGui.Checkbox("Draw in World", ref item.World);
                     ImGui.Checkbox("Draw on Large Map", ref item.LargeMap);
-                    item.Color = ColorPicker("Color", item.Color);
+                    ImGui.Checkbox("Large Map World Color", ref item.EnableLargeMapColor);
+                    item.LargeMapColor = ColorPicker("Active Large Map World Color", item.LargeMapColor);
+                    item.GameWorldColor = ColorPicker("Active World Color", item.GameWorldColor);
 
                     if (ImGui.Button("Delete"))
                     {
@@ -156,12 +158,16 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
         {
             if (drawing.World)
             {
-                DrawData(drawing.Color, drawing.Size, drawing.Thickness, drawing.Segments);
+                var colorToUse = inGameUi.Map.LargeMap.IsVisible && drawing.EnableLargeMapColor
+                    ? drawing.LargeMapColor
+                    : drawing.GameWorldColor;
+
+                DrawData(colorToUse, drawing.Size, drawing.Thickness, drawing.Segments);
             }
 
-            if (drawing.LargeMap && GameController.Game.IngameState.IngameUi.Map.LargeMap.IsVisible)
+            if (drawing.LargeMap && inGameUi.Map.LargeMap.IsVisible)
             {
-                Graphics.DrawCircleOnLargeMap(GameController.Player.GridPosNum, false, drawing.Size, drawing.Color, drawing.Thickness, drawing.Segments);
+                Graphics.DrawCircleOnLargeMap(GameController.Player.GridPosNum, false, drawing.Size, drawing.GameWorldColor, drawing.Thickness, drawing.Segments);
             }
         }
 
@@ -170,7 +176,7 @@ public class WhereTheCirclesAt : BaseSettingsPlugin<WhereTheCirclesAtSettings>
 
         void DrawData(Color color, float size, int thickness, int segments)
         {
-            DrawCircleInWorld(PlayerPos, size*10f, color, thickness, segments);
+            DrawCircleInWorld(PlayerPos, size * 10f, color, thickness, segments);
         }
     }
 
